@@ -1,0 +1,7 @@
+<System xmlns="http://systemjtechnology.com">
+  <SubSystem Name="SS1" Local="true">
+    <ClockDomain Name="Freq" Class="Freq">
+			<iSignal Name="SampleIn" Class="com.systemj.ipc.InputFileReader" File="wave/data1.txt" Type="java.lang.Float"/>
+		</ClockDomain>
+  </SubSystem>
+</System>

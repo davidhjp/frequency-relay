@@ -1,0 +1,90 @@
+/**
+ * Frequency relay
+ *
+ * @author Avinash Malik, updated by Heejong Park
+ * @version 2.0 
+ */
+reaction DataProcessing(:
+		input float signal SampleIn,
+		output int signal SampleCount
+		) 
+{
+	float signal SymResult,AveResult;
+	{ // Averaging block
+		int AveIndex = -1;
+		final int AVEWS = 4;
+		float AveWindow[] = new float[AVEWS];	
+		loop {        
+			await (SampleIn);
+			AveIndex = (AveIndex + 1) % AVEWS;
+			AveWindow[AveIndex] = #SampleIn;
+			float sum = 0;
+			for (int j=0; j<AVEWS; j++){  
+				// Why (AveIndex + j) % AVEWS not just j ?
+				sum = sum + AveWindow[(AveIndex + j) % AVEWS];
+			}                
+			emit AveResult(sum / AVEWS); // pass the result to the symmetry detection block
+		}
+	}
+	||
+	{ // Symmetry detection block
+		final int L = 10;
+		final int HalfSymWs = 80;
+		int SymIndex = -1;
+		int SymWs = HalfSymWs * 2 + 1;                // window size = half window size * 2 + 1 
+		float SymWindow[] = new float[SymWs];
+		loop {
+			await (AveResult);
+			SymIndex = (SymIndex + 1) % SymWs;
+			SymWindow[SymIndex] = #AveResult;
+			// CorIndex starts from 81
+			int CorIndex = (SymIndex - HalfSymWs + SymWs) % SymWs;        
+			float CorResult = 0;
+			for (int k=0; k<=HalfSymWs; k++) {
+				float x1 = SymWindow[(CorIndex + k) % SymWs];
+				float x2 = SymWindow[(CorIndex - k + SymWs) % SymWs];        	
+				CorResult = CorResult + (L + x1) * (L + x2);
+			}
+			emit SymResult(CorResult); 
+		}
+	}
+	||
+	{ // Peak detection block
+		float first = 10000f, second = 10000f, third = 10000f;
+		boolean FirstPeak = true;
+		int SampleCountVar = 0;
+		int SkipSamples = 323;    // 2*SymWs + 1 // originally 363 changed to 321
+		int cc;
+		loop {
+			await (SymResult);
+			cc++;
+			if (SkipSamples == 0) {        	
+				SampleCountVar++;
+				third = second;
+				second = first;
+				first = #SymResult;
+				if (second > first && second > third){
+					if (FirstPeak) {
+						FirstPeak = false;
+						SampleCountVar = 1;
+					} else {
+						int tyi = SampleCountVar - 1;
+//             emit SampleCount(tyi);
+//             System.out.println(tyi);
+						SampleCountVar = 1;
+					}
+				}
+			} else {        	
+				SkipSamples--;
+			}
+		}
+	}
+}
+
+Freq(
+		input float signal SampleIn;
+		output int signal SampleCount;
+		)->
+{
+	DataProcessing(:SampleIn,SampleCount);
+}
