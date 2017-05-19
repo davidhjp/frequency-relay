@@ -1,3 +1,4 @@
 *.*~
 *.swp
 /bin
+/server/node_modules

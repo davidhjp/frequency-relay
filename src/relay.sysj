@@ -12,7 +12,7 @@ reaction DataProcessing(:
 	float signal SymResult,AveResult;
 	{ // Averaging block
 		int AveIndex = -1;
-		final int AVEWS = 4;
+		final int AVEWS = 20;
 		float AveWindow[] = new float[AVEWS];	
 		loop {        
 			await (SampleIn);
@@ -29,7 +29,7 @@ reaction DataProcessing(:
 	||
 	{ // Symmetry detection block
 		final int L = 10;
-		final int HalfSymWs = 80;
+		final int HalfSymWs = 300;
 		int SymIndex = -1;
 		int SymWs = HalfSymWs * 2 + 1;                // window size = half window size * 2 + 1 
 		float SymWindow[] = new float[SymWs];
@@ -54,10 +54,9 @@ reaction DataProcessing(:
 		boolean FirstPeak = true;
 		int SampleCountVar = 0;
 		int SkipSamples = 323;    // 2*SymWs + 1 // originally 363 changed to 321
-		int cc;
 		loop {
 			await (SymResult);
-			cc++;
+//       System.out.println(#SymResult);
 			if (SkipSamples == 0) {        	
 				SampleCountVar++;
 				third = second;
@@ -69,9 +68,9 @@ reaction DataProcessing(:
 						SampleCountVar = 1;
 					} else {
 						int tyi = SampleCountVar - 1;
-//             emit SampleCount(tyi);
-//             System.out.println(tyi);
 						SampleCountVar = 1;
+						System.out.println("{\"sample_count\": " + tyi + "}");
+//             emit SampleCount("{\"sample_count\": " + tyi + "}");
 					}
 				}
 			} else {        	
@@ -84,7 +83,21 @@ reaction DataProcessing(:
 Freq(
 		input float signal SampleIn;
 		output int signal SampleCount;
+
+		// Simulation
+		input String signal wave;
 		)->
 {
-	DataProcessing(:SampleIn,SampleCount);
+	trap(T){
+		DataProcessing(:SampleIn,SampleCount)
+		||
+		{
+			loop {
+				abort(SampleIn){
+					{halt;} || {waitl(1s); exit(T);}
+				}
+			}
+		}
+	}
+	System.out.println("done");
 }
