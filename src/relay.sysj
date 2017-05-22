@@ -29,7 +29,7 @@ reaction DataProcessing(:
 	||
 	{ // Symmetry detection block
 		final int L = 10;
-		final int HalfSymWs = 300;
+		int HalfSymWs = 300;
 		int SymIndex = -1;
 		int SymWs = HalfSymWs * 2 + 1;                // window size = half window size * 2 + 1 
 		float SymWindow[] = new float[SymWs];
@@ -84,10 +84,9 @@ Freq(
 		input float signal SampleIn;
 		output int signal SampleCount;
 
-		// Simulation
-		input String signal wave;
 		)->
 {
+	// Simulation
 	trap(T){
 		DataProcessing(:SampleIn,SampleCount)
 		||

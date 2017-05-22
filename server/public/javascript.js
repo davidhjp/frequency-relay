@@ -9,13 +9,12 @@ $('#wave').change(function(e){
 	var fr = new FileReader()
 	fr.onload = function (e) {
 		const arr = e.target.result.split("\n")
-		console.log(arr)
 		var ctx = $('#input-chart')
 		var data = {
 				labels: Array.apply(null, {length: arr.length}).map(Number.call, Number),
 				datasets: [
 					{
-						label: "My First dataset",
+						label: "Input wave samples",
 						fill: false,
 						lineTension: 0.1,
 						backgroundColor: "rgba(75,192,192,0.4)",
@@ -46,7 +45,7 @@ $('#wave').change(function(e){
 	}
 	fr.readAsText(e.target.files[0])
 })
-$('form[id="main-submit"]').on('submit', function(e) {
+$('form[id=main-submit]').on('submit', function(e) {
 	e.preventDefault()
 	var data = new FormData(this)
 	data.append('unit', $('.dropdown-toggle').children().first().text().trim())
@@ -56,8 +55,10 @@ $('form[id="main-submit"]').on('submit', function(e) {
 		data: data,
 		processData: false,
 		contentType: false,
-		success: function() { console.log('done') },
-		error: function() {}
+		success: function() { 
+			console.log('donec')
+		},
+		error: function(err) {}
 	})
 })
 })
