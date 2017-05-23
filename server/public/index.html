@@ -22,6 +22,9 @@
 			</div>
 		</nav>
 		<section class="container-fluid row">
+			<div class="col-md-12">
+				<div id="alert"></div>
+			</div>
 			<div class="col-md-6">
 				<div class="page-header">
 					<h1>Frequency Relay</h1>
@@ -49,7 +52,7 @@
 							</div>
 						</div>
 					</div>
-					<button type="submit" class="btn btn-primary">Submit</button>
+					<button type="submit" class="btn btn-primary" data-toggle="modal" data-target="#my-modal" data-controls-modal="my-modal" data-backdrop="static" data-keyboard="false">Submit</button>
 				</form>
 			</div>
 			<div class="col-md-6">
@@ -57,6 +60,22 @@
 					<h1>Result</h1>
 				</div>
 				<canvas id="input-chart" width=150 height=50></canvas>
+				<canvas id="sym-chart" width=150 height=50></canvas>
+				<canvas id="freq-chart" width=150 height=50></canvas>
+			</div>
+			<div class="modal fade", id="my-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+				<div class="modal-dialog" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="myModalLabel">Being processed by a SystemJ program...</h4>
+						</div>
+						<div class="modal-body">
+							<div class="progress">
+								<div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 		</section>
 	</body>

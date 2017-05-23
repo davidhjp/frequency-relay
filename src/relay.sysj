@@ -46,6 +46,7 @@ reaction DataProcessing(:
 				CorResult = CorResult + (L + x1) * (L + x2);
 			}
 			emit SymResult(CorResult); 
+			System.out.println("{\"sym_val\": " + CorResult + "}");
 		}
 	}
 	||

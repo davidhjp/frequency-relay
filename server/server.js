@@ -6,6 +6,7 @@ const rs = require('randomstring')
 const os = require('os')
 const spawn = require('child_process').spawn
 const path = require('path')
+const readline = require('readline')
 
 const SERVER_PORT = 8080
 var xmlString
@@ -19,10 +20,13 @@ app.use('/jquery', express.static(__dirname + '/node_modules/jquery'));
 app.use('/chart.js', express.static(__dirname + '/node_modules/chart.js'));
 
 app.post('/submit', upload.single('wave'), function(req,res){
+	var freq = parseInt(req.body.freq)
+	var unit = req.body.unit
+	if(unit == "Khz")
+		freq = freq * 1000
 	var input = rs.generate(7)
 	var waveFile = (os.tmpdir() + "/" + input + '.txt').replace(/\\/g, '/')
 	var xmlFile = (os.tmpdir() + "/" + input + '.xml').replace(/\\/g, '/')
-	console.log(waveFile)
 	var xmlContent = xmlString.replace("$WAVE", waveFile)
 	var p1 = new Promise(function (resolve,reject) {
 		fs.writeFile(waveFile, req.file.buffer.toString(), function(err){
@@ -46,18 +50,25 @@ app.post('/submit', upload.single('wave'), function(req,res){
 			console.log('starting thread')
 			const ls = spawn('bash', ['-c', `CLASSPATH=../bin ../systemj/bin/sysjr ${xmlFile}`])
 			var sample_count = []
-			ls.stdout.on('data', (data) => {
+			var sym_val = []
+			var rl = readline.createInterface({
+				input: ls.stdout
+			})
+			rl.on('line', (data) => {
 				var o = JSON.parse(data.toString())
 				if(o.sample_count != null)
-					sample_count.push(o.sample_count)	
+					sample_count.push(freq / o.sample_count)	
+				if(o.sym_val != null)
+					sym_val.push(o.sym_val)
 			})
 			ls.stderr.on('data', (data) => {console.log(data.toString())})
 			ls.on('error', (data) => {reject('error on creating a thread')})
-			ls.on('exit', (status) => {resolve(sample_count)})
+			ls.on('exit', (status) => {resolve({'sample_count': sample_count, 'sym_val': sym_val})})
 		}
-	)}).then((sample_count) => {
-		res.status(200).json({"sample_count": sample_count })
+	)}).then((data) => {
+		res.status(200).json(data)
 	}).catch((d) => {
+		console.log(d)
 		res.status(400).send(d)
 	})
 })
