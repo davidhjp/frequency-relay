@@ -98,5 +98,5 @@ Freq(
 			}
 		}
 	}
-	System.out.println("done");
+	System.out.println("{\"status\": 1 }");
 }

@@ -55,10 +55,12 @@ $('form[id=main-submit]').on('submit', function(e) {
 		data: data,
 		processData: false,
 		contentType: false,
-		success: function() { 
-			console.log('donec')
+		success: function(data, status) { 
+			console.log(data)
 		},
-		error: function(err) {}
+		error: function(err) {
+			console.log(err.statusText)
+		}
 	})
 })
 })
