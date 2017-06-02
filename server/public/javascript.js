@@ -1,3 +1,5 @@
+var symchart, freqchart, wavechart
+
 function createDatasets(data) {
 		var data = {
 				labels: data['labels'],
@@ -42,13 +44,16 @@ $('#wave').change(function(e){
 	fr.onload = function (e) {
 		const arr = e.target.result.split("\n")
 		var ctx = $('#input-chart')
-		ctx.empty()
 		var data = createDatasets({
 			'labels': Array.apply(null, {length: arr.length}).map(Number.call, Number),
 			'datasets': arr,
 			'datalabel': 'Wave input'
 		})
-		var chart = new Chart(ctx, {
+
+		if(wavechart != null)
+			wavechart.destroy()
+
+		wavechart = new Chart(ctx, {
 			type: 'line',
 			data: data,
 				options: {
@@ -88,14 +93,17 @@ $('form[id=main-submit]').on('submit', function(e) {
 		success: function(data, status) { 
 			var sample_count = data.sample_count
 			var ctx = $('#freq-chart')
-			ctx.empty()
 			var dataz = createDatasets({
 				'labels': Array.apply(null, {length: sample_count.length}).map(Number.call, Number),
 				'datasets': sample_count,
 				'datalabel': 'Frequency',
 				'stepped': true
 			})
-			var chart = new Chart(ctx, {
+
+			if(freqchart != null)
+				freqchart.destroy()
+
+			freqchart = new Chart(ctx, {
 				type: 'line',
 				data: dataz,
 				options: {
@@ -111,13 +119,16 @@ $('form[id=main-submit]').on('submit', function(e) {
 			})
 			var sym_val = data.sym_val
 			ctx = $('#sym-chart')
-			ctx.empty()
 			dataz = createDatasets({
 				'labels': Array.apply(null, {length: sym_val.length}).map(Number.call, Number),
 				'datasets': sym_val,
 				'datalabel': 'Correlation result'
 			})
-			chart = new Chart(ctx, {
+
+			if(symchart != null)
+				symchart.destroy()
+
+			symchart = new Chart(ctx, {
 				type: 'line',
 				data: dataz,
 				options: {
