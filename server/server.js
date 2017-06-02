@@ -57,7 +57,7 @@ app.post('/submit', upload.single('wave'), function(req,res){
 			rl.on('line', (data) => {
 				var o = JSON.parse(data.toString())
 				if(o.sample_count != null)
-					sample_count.push(freq / o.sample_count)	
+					sample_count.push(freq / (o.sample_count * 2))	
 				if(o.sym_val != null)
 					sym_val.push(o.sym_val)
 			})

@@ -29,7 +29,7 @@ reaction DataProcessing(:
 	||
 	{ // Symmetry detection block
 		final int L = 10;
-		int HalfSymWs = 300;
+		int HalfSymWs = 160;
 		int SymIndex = -1;
 		int SymWs = HalfSymWs * 2 + 1;                // window size = half window size * 2 + 1 
 		float SymWindow[] = new float[SymWs];
