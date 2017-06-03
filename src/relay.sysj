@@ -12,7 +12,7 @@ reaction DataProcessing(:
 	float signal SymResult,AveResult;
 	{ // Averaging block
 		int AveIndex = -1;
-		final int AVEWS = 20;
+		final int AVEWS = 5;
 		float AveWindow[] = new float[AVEWS];	
 		loop {        
 			await (SampleIn);

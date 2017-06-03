@@ -97,7 +97,7 @@ $('form[id=main-submit]').on('submit', function(e) {
 				'labels': Array.apply(null, {length: sample_count.length}).map(Number.call, Number),
 				'datasets': sample_count,
 				'datalabel': 'Frequency',
-				'stepped': true
+//         'stepped': true
 			})
 
 			if(freqchart != null)
