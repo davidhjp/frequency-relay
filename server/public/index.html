@@ -31,12 +31,6 @@
 				</div>
 				<form id="main-submit" method="post" action="/submit"><!--method="post" action="/submit">-->
 					<div class="form-group">
-						<label for="wave">Wave file input </label>
-						(<a href="samplewave.txt">Sample</a>)
-						<input id="wave" name="wave" type="file">
-						<p class="help-block">Value recorded on each line</p>
-					</div>
-					<div class="form-group">
 						<label for="sampling-freq">Sampling frequency</label>
 						<div class="row">
 							<div class="col-md-6">
@@ -53,11 +47,28 @@
 							</div>
 						</div>
 					</div>
+					<div class="form-group">
+						<fieldset>
+							<legend>Wave components</legend>
+							<div class="form-inline">
+								<label for="gain">G: </label>
+								<input name="gain" class="form-control input-sm" type="text" placeholder="e.g. 50">
+								<label for="wfreq">&fnof;: </label>
+								<input name="wfreq" class="form-control input-sm" type="text" placeholder="e.g. 50">
+								<label for="cycle">C: </label>
+								<input name="cycle" class="form-control input-sm" type="text" placeholder="e.g. 5">
+								<button class="btn btn-sm btn-default" type="button" id="add-wave">Add wave</button>
+							</div>
+							<p class="help-block">G: Gain, &fnof;: Wave frequency, C: Number of cycles</p>
+						</fieldset>
+					</div>
+						<div class="row">
+							<div class="col-md-6">
+								<ul class="list-group" id="wave-list"></ul>
+							</div>
+						</div>
 					<button type="submit" class="btn btn-primary" data-toggle="modal" data-target="#my-modal" data-controls-modal="my-modal" data-backdrop="static" data-keyboard="false">Submit</button>
 				</form>
-<!--         <form method="get" action="samplewave.txt"> -->
-<!--           <button type="submit" class="btn btn-primary">Download a sample wave file</button> -->
-<!--         </form> -->
 			</div>
 			<div class="col-md-6">
 				<div class="page-header">

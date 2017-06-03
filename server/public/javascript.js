@@ -39,6 +39,22 @@ $('#dropdown-click-hz').click(function (){
 $('#dropdown-click-khz').click(function (){
 	$('.dropdown-toggle').children().first().text('Khz ')
 })
+
+$('#add-wave').click(function (){
+	var data = new FormData($('form[id=main-submit]')[0])
+	var gain = parseInt(data.get('gain')), wfreq = parseFloat(data.get('wfreq')), cycle = parseInt(data.get('cycle'))
+	if(isNaN(gain) || isNaN(wfreq) || isNaN(cycle)) {
+		alert('Missing field(s) or entered incorrect format(s)')
+		return null
+	}
+	$('<li></li>', {class: 'list-group-item wave-component', gain: gain, wfreq: wfreq, cycle: cycle})
+				.prepend(`<b>Wave</b>: sin(2&pi;${wfreq})&nbsp&nbsp<b>Cycle</b>: ${cycle}
+									<a href="#">
+									<span style="float: right" class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+									</a>`).appendTo('#wave-list')
+//         text: `Wave: sin(2 * pi * ${wfreq}) Cycle: ${cycle}`}).appendTo('#wave-list')
+})
+
 $('#wave').change(function(e){
 	var fr = new FileReader()
 	fr.onload = function (e) {
