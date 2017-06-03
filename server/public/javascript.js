@@ -108,11 +108,11 @@ $('form[id=main-submit]').on('submit', function(e) {
 				data: dataz,
 				options: {
 					scales: {
-						yAxes: [{
-							ticks: {
-								min: 0,
-							}
-						}],
+//             yAxes: [{
+//               ticks: {
+//                 min: 0,
+//               }
+//             }],
 						xAxes: [{ ticks: {maxTicksLimit: 20 }}]
 					}
 				}
