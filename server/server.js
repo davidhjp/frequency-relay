@@ -27,13 +27,19 @@ function genWave(freq, waves, filename) {
 	for(var i=0;i<waves.length;i++){
 		var wave = waves[i]
 		for(var j=0; j<wave.duration; j+=ts){
-			var r = math.eval(wave.equation, {pi: Math.PI, t: j})
+			try{
+				var r = math.eval(wave.equation, {pi: Math.PI, t: j})
+			} catch(e) {
+					throw new SyntaxError(wave.equation)
+			}
 			s.write(`${r}\n`)
 		}
 	}
 }
 
 app.post('/submit',  upload.single(), function(req,res){
+	var size_avblock = req.body['param-avblock']
+	var size_symblock = req.body['param-symblock']
 	var freq = parseInt(req.body.freq)
 	var unit = req.body.unit
 	if(unit == "Khz")
@@ -43,7 +49,12 @@ app.post('/submit',  upload.single(), function(req,res){
 	var xmlFile = (os.tmpdir() + "/" + input + '.xml').replace(/\\/g, '/')
 	var xmlContent = xmlString.replace("$WAVE", waveFile)
 
-	genWave(freq, JSON.parse(req.body.waves), waveFile)
+	try{
+		genWave(freq, JSON.parse(req.body.waves), waveFile)
+	} catch (e) {
+		res.status(500).send('Unable to process the given formula: ' + e.message)
+		return;
+	}
 	console.log('written to ' + waveFile)
 
 	var p2 = new Promise((resolve, reject) => {
@@ -57,7 +68,7 @@ app.post('/submit',  upload.single(), function(req,res){
 	p2.then(function() { 
 		return new Promise((resolve,reject) => {
 			console.log('starting thread')
-			const ls = spawn('bash', ['-c', `CLASSPATH=../bin ../systemj/bin/sysjr ${xmlFile}`])
+			const ls = spawn('bash', ['-c', `JAVA_OPTS="-Dsymsize=${size_symblock} -Davesize=${size_avblock}" CLASSPATH=../bin ../systemj/bin/sysjr ${xmlFile}`])
 			var sample_count = []
 			var sym_val = []
 			var rl = readline.createInterface({

@@ -1,7 +1,7 @@
 BINDIR=bin
 SYSJR=sysjr
 SYSJC=sysjc
-URL=https://github.com/hjparker/systemj-release/releases/download/v2.1-123/sjdk-v2.1-123-g6017468.tgz
+URL=https://github.com/hjparker/systemj-release/raw/master/com/systemjtechnology/systemj/v2.1-135/systemj-v2.1-135.tgz
 SYSJR=systemj/bin/sysjr
 SYSJC=systemj/bin/sysjc
 
@@ -12,10 +12,10 @@ bin/Freq.class: src/relay.sysj
 
 systemj/bin:
 	wget $(URL) -P systemj
-	cd systemj; tar xvaf sjdk*.tgz ; mv sjdk*/* . ; chmod u+x bin/*
+	cd systemj; tar xvaf systemj*.tgz ; mv sjdk*/* . ; chmod u+x bin/*
 
 run:
-	CLASSPATH=$(BINDIR) $(SYSJR) lcf/relay.xml
+	CLASSPATH=$(BINDIR) JAVA_OPTS="-Dsymsize=160 -Davesize=5" $(SYSJR) lcf/relay.xml
 
 clean:
 	rm -rf $(BINDIR)

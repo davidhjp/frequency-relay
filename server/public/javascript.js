@@ -91,17 +91,31 @@ $('#wave').change(function(e){
 	fr.readAsText(e.target.files[0])
 })
 
+function warn(msg){
+//   if(!$('.alert').length){
+		$('#alert').prepend(`<div class='alert alert-warning alert-dismissible' role='alert'> \
+			<button type='button' class='close' data-dismiss='alert' aria-label='Close'>\
+			<span aria-hidden='true'>&times;</span></button>\
+			<strong>Warning!</strong> ${msg}</div>`)
+//   }
+	$('#my-modal').modal('hide')
+}
+
+function error(msg){
+//   if(!$('.alert').length){
+		$('#alert').prepend(`<div class='alert alert-danger alert-dismissible' role='alert'> \
+			<button type='button' class='close' data-dismiss='alert' aria-label='Close'>\
+			<span aria-hidden='true'>&times;</span></button>\
+			<strong>Error!</strong> ${msg}</div>`)
+//   }
+	$('#my-modal').modal('hide')
+}
+
 $('form[id=main-submit]').on('submit', function(e) {
 	e.preventDefault()
 	var data = new FormData(this)
 	if(data.get('freq').trim() == '') {
-		if(!$('.alert').length){
-			$('#alert').prepend("<div class='alert alert-warning alert-dismissible' role='alert'> \
-				<button type='button' class='close' data-dismiss='alert' aria-label='Close'>\
-				<span aria-hidden='true'>&times;</span></button>\
-				<strong>Warning!</strong> Missing required input</div>")
-		}
-		$('#my-modal').modal('hide')
+		warn('Missing sampling frequency value!!')
 		return;
 	}
 
@@ -110,6 +124,10 @@ $('form[id=main-submit]').on('submit', function(e) {
 	$('.wave-component').each(function (i, o){
 		wc.push({duration: $(o).attr('duration'), equation: $(o).attr('equation')})
 	})
+	if(wc.length == 0){
+		warn('Please add the wave equation')
+		return;
+	}
 	data.append('waves', JSON.stringify(wc))
 	$.ajax({
 		url: "/submit",
@@ -204,7 +222,7 @@ $('form[id=main-submit]').on('submit', function(e) {
 				$('.alert').alert('close')
 		},
 		error: function(err) {
-			console.log(err.statusText)
+			error(err.responseText)
 		}
 	})
 })

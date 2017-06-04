@@ -4,7 +4,8 @@
  * @author Avinash Malik, updated by Heejong Park
  * @version 2.0 
  */
-reaction DataProcessing(:
+reaction DataProcessing(
+		int SYM_SIZE, int AVE_SIZE:
 		input float signal SampleIn,
 		output int signal SampleCount
 		) 
@@ -12,7 +13,7 @@ reaction DataProcessing(:
 	float signal SymResult,AveResult;
 	{ // Averaging block
 		int AveIndex = -1;
-		final int AVEWS = 5;
+		final int AVEWS = AVE_SIZE;
 		float AveWindow[] = new float[AVEWS];	
 		loop {        
 			await (SampleIn);
@@ -29,7 +30,7 @@ reaction DataProcessing(:
 	||
 	{ // Symmetry detection block
 		final int L = 10;
-		int HalfSymWs = 160;
+		int HalfSymWs = SYM_SIZE / 2;
 		int SymIndex = -1;
 		int SymWs = HalfSymWs * 2 + 1;                // window size = half window size * 2 + 1 
 		float SymWindow[] = new float[SymWs];
@@ -54,7 +55,7 @@ reaction DataProcessing(:
 		float first = 10000f, second = 10000f, third = 10000f;
 		boolean FirstPeak = true;
 		int SampleCountVar = 0;
-		int SkipSamples = 323;    // 2*SymWs + 1 // originally 363 changed to 321
+		int SkipSamples = 0;    // 2*SymWs + 1 // originally 363 changed to 321
 		loop {
 			await (SymResult);
 //       System.out.println(#SymResult);
@@ -89,7 +90,17 @@ Freq(
 {
 	// Simulation
 	trap(T){
-		DataProcessing(:SampleIn,SampleCount)
+		{
+			int symsize, avesize;
+			try{
+				symsize = Integer.parseInt(System.getProperty("symsize"));
+				avesize = Integer.parseInt(System.getProperty("avesize"));
+			} catch(java.lang.Exception e) {
+				symsize = 320;
+				avesize = 5;	
+			}
+			DataProcessing(symsize, avesize : SampleIn,SampleCount);
+		}
 		||
 		{
 			loop {
