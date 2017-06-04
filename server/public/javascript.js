@@ -1,4 +1,5 @@
 var symchart, freqchart, wavechart
+Chart.defaults.global.legend.display = false;
 
 function createDatasets(data) {
 		var data = {
@@ -60,37 +61,6 @@ $(document).on('click', '.remove-wave', function() {
 	$(this).parents('li').eq(0).remove()
 })
 
-$('#wave').change(function(e){
-	var fr = new FileReader()
-	fr.onload = function (e) {
-		const arr = e.target.result.split("\n")
-		var ctx = $('#input-chart')
-		var data = createDatasets({
-			'labels': Array.apply(null, {length: arr.length}).map(Number.call, Number),
-			'datasets': arr,
-			'datalabel': 'Wave input'
-		})
-
-		if(wavechart != null)
-			wavechart.destroy()
-
-		wavechart = new Chart(ctx, {
-			type: 'line',
-			data: data,
-				options: {
-					scales: {
-						xAxes: [{
-							ticks: {
-								maxTicksLimit: 30
-							}
-						}]
-					}
-				}
-		})
-	}
-	fr.readAsText(e.target.files[0])
-})
-
 function warn(msg){
 //   if(!$('.alert').length){
 		$('#alert').prepend(`<div class='alert alert-warning alert-dismissible' role='alert'> \
@@ -114,10 +84,15 @@ function error(msg){
 $('form[id=main-submit]').on('submit', function(e) {
 	e.preventDefault()
 	var data = new FormData(this)
-	if(data.get('freq').trim() == '') {
+	var freq = data.get('freq').trim()
+	if(freq == '') {
 		warn('Missing sampling frequency value!!')
 		return;
 	}
+	freq = parseFloat(freq)
+	if(data.get('unit') == 'Khz')
+		freq = freq * 1000
+	var ts = 1 / freq
 
 	data.append('unit', $('.id-freq-unit').text().trim())
 	var wc = []
@@ -125,7 +100,7 @@ $('form[id=main-submit]').on('submit', function(e) {
 		wc.push({duration: $(o).attr('duration'), equation: $(o).attr('equation')})
 	})
 	if(wc.length == 0){
-		warn('Please add the wave equation')
+		warn('Add wave equation')
 		return;
 	}
 	data.append('waves', JSON.stringify(wc))
@@ -138,9 +113,12 @@ $('form[id=main-submit]').on('submit', function(e) {
 		success: function(data, status) { 
 			// Drawing input wave
 			var wave_sample = data.wave.split('\n')
+			var xlabels = Array.apply(null, {length: wave_sample.length}).map(function(o, i){
+				return `${i*ts}`
+			})
 			var ctx = $('#input-chart')
 			var wave = createDatasets({
-				'labels': Array.apply(null, {length: wave_sample.length}).map(Number.call, Number),
+				'labels': xlabels,
 				'datasets': wave_sample,
 				'datalabel': 'Wave input'
 			})
@@ -152,10 +130,15 @@ $('form[id=main-submit]').on('submit', function(e) {
 				type: 'line',
 				data: wave,
 					options: {
+						title: {
+							display: true, text: 'Input wave'
+						},
 						scales: {
 							xAxes: [{
-								ticks: {
-									maxTicksLimit: 30
+								ticks: {maxTicksLimit: 20},
+								scaleLabel: {
+									display: true,
+									labelString: 'seconds'
 								}
 							}]
 						}
@@ -179,13 +162,21 @@ $('form[id=main-submit]').on('submit', function(e) {
 				type: 'line',
 				data: dataz,
 				options: {
+					title: {
+						display: true, text: 'Frequency (Hz)'
+					},
 					scales: {
 //             yAxes: [{
 //               ticks: {
 //                 min: 0,
 //               }
 //             }],
-						xAxes: [{ ticks: {maxTicksLimit: 20 }}]
+						xAxes: [{ ticks: {maxTicksLimit: 20 },
+								scaleLabel: {
+									display: true,
+									labelString: '# of peaks detected'
+								}
+						}]
 					}
 				}
 			})
@@ -194,7 +185,7 @@ $('form[id=main-submit]').on('submit', function(e) {
 			var sym_val = data.sym_val
 			ctx = $('#sym-chart')
 			dataz = createDatasets({
-				'labels': Array.apply(null, {length: sym_val.length}).map(Number.call, Number),
+				'labels': xlabels,
 				'datasets': sym_val,
 				'datalabel': 'Correlation result'
 			})
@@ -206,11 +197,18 @@ $('form[id=main-submit]').on('submit', function(e) {
 				type: 'line',
 				data: dataz,
 				options: {
+					title: {
+						display: true, text: 'Symmetry function result'
+					},
 					scales: {
 						xAxes: [{
 							ticks: {
 								min: 0,
 								maxTicksLimit: 20
+							},
+							scaleLabel: {
+								display: true,
+								labelString: 'seconds'
 							}
 						}]
 					}
