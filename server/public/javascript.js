@@ -90,7 +90,7 @@ $('form[id=main-submit]').on('submit', function(e) {
 		return;
 	}
 	freq = parseFloat(freq)
-	if(data.get('unit') == 'Khz')
+	if($('.id-freq-unit').text().trim() == 'Khz')
 		freq = freq * 1000
 	var ts = 1 / freq
 
@@ -114,7 +114,7 @@ $('form[id=main-submit]').on('submit', function(e) {
 			// Drawing input wave
 			var wave_sample = data.wave.split('\n')
 			var xlabels = Array.apply(null, {length: wave_sample.length}).map(function(o, i){
-				return `${i*ts}`
+				return `${(i*ts).toFixed(2)}`
 			})
 			var ctx = $('#input-chart')
 			var wave = createDatasets({
