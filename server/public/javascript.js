@@ -138,7 +138,6 @@ $('form[id=main-submit]').on('submit', function(e) {
 		success: function(data, status) { 
 			// Drawing input wave
 			var wave_sample = data.wave.split('\n')
-			console.log("123 "+wave_sample)
 			var ctx = $('#input-chart')
 			var wave = createDatasets({
 				'labels': Array.apply(null, {length: wave_sample.length}).map(Number.call, Number),
