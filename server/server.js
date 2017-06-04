@@ -7,6 +7,7 @@ const os = require('os')
 const spawn = require('child_process').spawn
 const path = require('path')
 const readline = require('readline')
+const math = require('mathjs')
 
 const SERVER_PORT = 8080
 var xmlString
@@ -18,8 +19,21 @@ app.use(express.static('public'))
 app.use('/bootstrap', express.static(__dirname + '/node_modules/bootstrap'));
 app.use('/jquery', express.static(__dirname + '/node_modules/jquery'));
 app.use('/chart.js', express.static(__dirname + '/node_modules/chart.js'));
+app.use('/mathjs', express.static(__dirname + '/node_modules/mathjs'));
 
-app.post('/submit', upload.single('wave'), function(req,res){
+function genWave(freq, waves, filename) {
+	var s = fs.createWriteStream(filename, {flags: 'a'})
+	var ts = 1 / freq
+	for(var i=0;i<waves.length;i++){
+		var wave = waves[i]
+		for(var j=0; j<wave.duration; j+=ts){
+			var r = math.eval(wave.equation, {pi: Math.PI, t: j})
+			s.write(`${r}\n`)
+		}
+	}
+}
+
+app.post('/submit',  upload.single(), function(req,res){
 	var freq = parseInt(req.body.freq)
 	var unit = req.body.unit
 	if(unit == "Khz")
@@ -28,24 +42,19 @@ app.post('/submit', upload.single('wave'), function(req,res){
 	var waveFile = (os.tmpdir() + "/" + input + '.txt').replace(/\\/g, '/')
 	var xmlFile = (os.tmpdir() + "/" + input + '.xml').replace(/\\/g, '/')
 	var xmlContent = xmlString.replace("$WAVE", waveFile)
-	var p1 = new Promise(function (resolve,reject) {
-		fs.writeFile(waveFile, req.file.buffer.toString(), function(err){
-			if(err)
-				reject(console.log(err))
-			else
-				resolve(console.log('written to ' + waveFile))
-		})
-	})
-	var p2 = function() {
-		return new Promise((resolve, reject) => {
+
+	genWave(freq, JSON.parse(req.body.waves), waveFile)
+	console.log('written to ' + waveFile)
+
+	var p2 = new Promise((resolve, reject) => {
 		fs.writeFile(xmlFile, xmlContent, function(err){
 			if(err)
 				reject(console.log(err))
 			else
 				resolve(console.log('written to ' + xmlFile))
 		})
-	})}
-	p1.then(p2).then(function() { 
+	})
+	p2.then(function() { 
 		return new Promise((resolve,reject) => {
 			console.log('starting thread')
 			const ls = spawn('bash', ['-c', `CLASSPATH=../bin ../systemj/bin/sysjr ${xmlFile}`])
@@ -63,9 +72,25 @@ app.post('/submit', upload.single('wave'), function(req,res){
 			})
 			ls.stderr.on('data', (data) => {console.log(data.toString())})
 			ls.on('error', (data) => {reject('error on creating a thread')})
-			ls.on('exit', (status) => {resolve({'sample_count': sample_count, 'sym_val': sym_val})})
+			ls.on('exit', (status) => {
+				console.log('SystemJ - done')
+				resolve({'sample_count': sample_count, 'sym_val': sym_val})}
+			)
 		}
-	)}).then((data) => {
+	)})
+	.then((data) => {
+		return new Promise((resolve,reject) => {
+			console.log('Starting reading the wave file')
+			fs.readFile(waveFile, (err, d) => {
+				if(err)	
+					reject('could not read the input wavefile for visualization')
+				data['wave'] = d.toString()
+				console.log('Finished reading the wave file')
+				resolve(data)
+			})
+		})
+	})
+	.then((data) => {
 		res.status(200).json(data)
 	}).catch((d) => {
 		console.log(d)

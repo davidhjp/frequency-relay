@@ -33,26 +33,31 @@ function createDatasets(data) {
 }
 
 $(function(){
-$('#dropdown-click-hz').click(function (){
-	$('.dropdown-toggle').children().first().text('Hz  ')
+
+$('.dropdown-click').click(function () {
+	$(this).parents('.input-group-btn').find('.dropdown-display').text($(this).text() + ' ')
 })
-$('#dropdown-click-khz').click(function (){
-	$('.dropdown-toggle').children().first().text('Khz ')
-})
+
 
 $('#add-wave').click(function (){
 	var data = new FormData($('form[id=main-submit]')[0])
-	var gain = parseInt(data.get('gain')), wfreq = parseFloat(data.get('wfreq')), cycle = parseInt(data.get('cycle'))
-	if(isNaN(gain) || isNaN(wfreq) || isNaN(cycle)) {
+	var eq = data.get('equation'), duration = parseFloat(data.get('duration'))
+	if(!eq.trim() || isNaN(duration)) {
 		alert('Missing field(s) or entered incorrect format(s)')
 		return null
 	}
-	$('<li></li>', {class: 'list-group-item wave-component', gain: gain, wfreq: wfreq, cycle: cycle})
-				.prepend(`<b>Wave</b>: sin(2&pi;${wfreq})&nbsp&nbsp<b>Cycle</b>: ${cycle}
-									<a href="#">
+	var unit = $('.id-duration-unit').text().trim()
+	if(unit == 'ms')
+		duration = duration / 1000
+	$('<li></li>', {class: 'list-group-item wave-component',  duration: duration, equation: eq})
+				.prepend(`<b>Wave</b>: ${eq}&nbsp&nbsp<b>Duration</b>: ${duration} s
+									<a href="#" class="remove-wave">
 									<span style="float: right" class="glyphicon glyphicon-remove" aria-hidden="true"></span>
 									</a>`).appendTo('#wave-list')
-//         text: `Wave: sin(2 * pi * ${wfreq}) Cycle: ${cycle}`}).appendTo('#wave-list')
+})
+
+$(document).on('click', '.remove-wave', function() {
+	$(this).parents('li').eq(0).remove()
 })
 
 $('#wave').change(function(e){
@@ -85,10 +90,11 @@ $('#wave').change(function(e){
 	}
 	fr.readAsText(e.target.files[0])
 })
+
 $('form[id=main-submit]').on('submit', function(e) {
 	e.preventDefault()
 	var data = new FormData(this)
-	if(typeof(data.get('wave')) != 'object' || data.get('freq').trim() == '') {
+	if(data.get('freq').trim() == '') {
 		if(!$('.alert').length){
 			$('#alert').prepend("<div class='alert alert-warning alert-dismissible' role='alert'> \
 				<button type='button' class='close' data-dismiss='alert' aria-label='Close'>\
@@ -99,7 +105,12 @@ $('form[id=main-submit]').on('submit', function(e) {
 		return;
 	}
 
-	data.append('unit', $('.dropdown-toggle').children().first().text().trim())
+	data.append('unit', $('.id-freq-unit').text().trim())
+	var wc = []
+	$('.wave-component').each(function (i, o){
+		wc.push({duration: $(o).attr('duration'), equation: $(o).attr('equation')})
+	})
+	data.append('waves', JSON.stringify(wc))
 	$.ajax({
 		url: "/submit",
 		type: "POST",
@@ -107,6 +118,34 @@ $('form[id=main-submit]').on('submit', function(e) {
 		processData: false,
 		contentType: false,
 		success: function(data, status) { 
+			// Drawing input wave
+			var wave_sample = data.wave.split('\n')
+			console.log("123 "+wave_sample)
+			var ctx = $('#input-chart')
+			var wave = createDatasets({
+				'labels': Array.apply(null, {length: wave_sample.length}).map(Number.call, Number),
+				'datasets': wave_sample,
+				'datalabel': 'Wave input'
+			})
+
+			if(wavechart != null)
+				wavechart.destroy()
+
+			wavechart = new Chart(ctx, {
+				type: 'line',
+				data: wave,
+					options: {
+						scales: {
+							xAxes: [{
+								ticks: {
+									maxTicksLimit: 30
+								}
+							}]
+						}
+					}
+			})
+
+			// Drawing frequency
 			var sample_count = data.sample_count
 			var ctx = $('#freq-chart')
 			var dataz = createDatasets({
@@ -133,6 +172,8 @@ $('form[id=main-submit]').on('submit', function(e) {
 					}
 				}
 			})
+
+			// Drawing sym chart
 			var sym_val = data.sym_val
 			ctx = $('#sym-chart')
 			dataz = createDatasets({
@@ -167,4 +208,5 @@ $('form[id=main-submit]').on('submit', function(e) {
 		}
 	})
 })
+
 })
