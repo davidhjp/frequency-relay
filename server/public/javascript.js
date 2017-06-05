@@ -261,6 +261,7 @@ $('form[id=main-submit]').on('submit', function(e) {
 				error(err.responseText)
 			}
 		})
+		worker.terminate()
 	})
 })
 
