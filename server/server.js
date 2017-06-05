@@ -1,6 +1,6 @@
 const express = require('express'),
 	app = express()
-const upload = require('multer')()
+const upload = require('multer')({ limits: {fieldSize: 1024 * 1024 * 10}})
 const fs = require('fs')
 const rs = require('randomstring')
 const os = require('os')
@@ -95,18 +95,6 @@ app.post('/submit',  upload.single(), function(req,res){
 			)
 		}
 	)})
-	.then((data) => {
-		return new Promise((resolve,reject) => {
-			console.log('Starting reading the wave file')
-			fs.readFile(waveFile, (err, d) => {
-				if(err)	
-					reject('could not read the input wavefile for visualization')
-				data['wave'] = d.toString()
-				console.log('Finished reading the wave file')
-				resolve(data)
-			})
-		})
-	})
 	.then((data) => {
 		res.status(200).json(data)
 	}).catch((d) => {
