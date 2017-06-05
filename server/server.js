@@ -49,23 +49,29 @@ app.post('/submit',  upload.single(), function(req,res){
 	var xmlFile = (os.tmpdir() + "/" + input + '.xml').replace(/\\/g, '/')
 	var xmlContent = xmlString.replace("$WAVE", waveFile)
 
-	try{
-		genWave(freq, JSON.parse(req.body.waves), waveFile)
-	} catch (e) {
-		res.status(500).send('Unable to process the given formula: ' + e.message)
-		return;
-	}
-	console.log('written to ' + waveFile)
-
-	var p2 = new Promise((resolve, reject) => {
-		fs.writeFile(xmlFile, xmlContent, function(err){
-			if(err)
-				reject(console.log(err))
-			else
-				resolve(console.log('written to ' + xmlFile))
-		})
+	var wave_samples = JSON.parse(req.body.waves)
+	var p1 = new Promise((resolve, reject) => {
+		var s = fs.createWriteStream(waveFile, {flags: 'a'})
+		var ts = 1 / freq
+		for(var i=0;i<wave_samples.length;i++){
+			var sample = wave_samples[i]
+				s.write(`${sample}\n`)
+		}
+		console.log('written to ' + waveFile)
+		resolve()
 	})
-	p2.then(function() { 
+
+	var p2 = function() {
+		new Promise((resolve, reject) => {
+			fs.writeFile(xmlFile, xmlContent, function(err){
+				if(err)
+					reject(console.log(err))
+				else
+					resolve(console.log('written to ' + xmlFile))
+			})
+		})
+	}
+	p1.then(p2).then(function() { 
 		return new Promise((resolve,reject) => {
 			console.log('starting thread')
 			const ls = spawn('bash', ['-c', `JAVA_OPTS="-Dsymsize=${size_symblock} -Davesize=${size_avblock}" CLASSPATH=../bin ../systemj/bin/sysjr ${xmlFile}`])

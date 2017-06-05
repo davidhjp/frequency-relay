@@ -81,7 +81,41 @@ function error(msg){
 	$('#my-modal').modal('hide')
 }
 
+function genWave(ts, waves) {
+	return new Promise((resolve,reject) => {
+		var wave_sample = []
+		var count = 0, lastj = 0, lasti = 0
+		const SEG_SIZE = 50
+		function iteration() {
+			for(var i=lasti; i<waves.length;i++){
+				var wave = waves[i]
+				for(var j=lastj; j<wave.duration; j+=ts){
+					try{
+						var r = math.eval(wave.equation, {pi: Math.PI, t: j})
+						wave_sample.push(r)
+						count = count + 1
+						if (count > SEG_SIZE){
+							lasti = i
+							lastj = j
+							count = 0
+							setTimeout(iteration, 5)
+							return;
+						}
+					} catch(e) {
+						reject(e)
+//             throw new SyntaxError(`Unable to process equation - ${wave.equation}`)
+					}
+				}
+			}
+			resolve(wave_sample)
+		}
+		iteration()
+	})
+}
+
 $('form[id=main-submit]').on('submit', function(e) {
+	$('.modal-title').text('Sampling the wave...')
+	$('.progress-bar').attr('aria-valuenow', 50).css('width', '50%')
 	e.preventDefault()
 	var data = new FormData(this)
 	var freq = data.get('freq').trim()
@@ -103,109 +137,39 @@ $('form[id=main-submit]').on('submit', function(e) {
 		warn('Add wave equation')
 		return;
 	}
-	data.append('waves', JSON.stringify(wc))
-	$.ajax({
-		url: "/submit",
-		type: "POST",
-		data: data,
-		processData: false,
-		contentType: false,
-		success: function(data, status) { 
-			// Drawing input wave
-			var wave_sample = data.wave.split('\n')
-			var xlabels = Array.apply(null, {length: wave_sample.length}).map(function(o, i){
-				return `${(i*ts).toFixed(2)}`
-			})
-			var ctx = $('#input-chart')
-			var wave = createDatasets({
-				'labels': xlabels,
-				'datasets': wave_sample,
-				'datalabel': 'Wave input'
-			})
 
-			if(wavechart != null)
-				wavechart.destroy()
+	// Drawing input wave
+	var worker = new Worker('wavegen_worker.js')
+	worker.postMessage({waves: wc, ts: ts})
+	worker.addEventListener('message', function(e) {
+		if(e.data.error){
+			error(e.data['err'])
+			return
+		}
+		var wave_sample = e.data['data']
+		var xlabels = Array.apply(null, {length: wave_sample.length}).map(function(o, i){
+			return `${(i*ts).toFixed(2)}`
+		})
+		var ctx = $('#input-chart')
+		var wave = createDatasets({
+			'labels': xlabels,
+			'datasets': wave_sample,
+			'datalabel': 'Wave input'
+		})
 
-			wavechart = new Chart(ctx, {
-				type: 'line',
-				data: wave,
-					options: {
-						title: {
-							display: true, text: 'Input wave'
-						},
-						scales: {
-							xAxes: [{
-								ticks: {maxTicksLimit: 20},
-								scaleLabel: {
-									display: true,
-									labelString: 'seconds'
-								}
-							}]
-						}
-					}
-			})
+		if(wavechart != null)
+			wavechart.destroy()
 
-			// Drawing frequency
-			var sample_count = data.sample_count
-			var ctx = $('#freq-chart')
-			var dataz = createDatasets({
-				'labels': Array.apply(null, {length: sample_count.length}).map(Number.call, Number),
-				'datasets': sample_count,
-				'datalabel': 'Frequency',
-//         'stepped': true
-			})
-
-			if(freqchart != null)
-				freqchart.destroy()
-
-			freqchart = new Chart(ctx, {
-				type: 'line',
-				data: dataz,
+		wavechart = new Chart(ctx, {
+			type: 'line',
+			data: wave,
 				options: {
 					title: {
-						display: true, text: 'Frequency (Hz)'
-					},
-					scales: {
-//             yAxes: [{
-//               ticks: {
-//                 min: 0,
-//               }
-//             }],
-						xAxes: [{ ticks: {maxTicksLimit: 20 },
-								scaleLabel: {
-									display: true,
-									labelString: '# of peaks detected'
-								}
-						}]
-					}
-				}
-			})
-
-			// Drawing sym chart
-			var sym_val = data.sym_val
-			ctx = $('#sym-chart')
-			dataz = createDatasets({
-				'labels': xlabels,
-				'datasets': sym_val,
-				'datalabel': 'Correlation result'
-			})
-
-			if(symchart != null)
-				symchart.destroy()
-
-			symchart = new Chart(ctx, {
-				type: 'line',
-				data: dataz,
-				options: {
-					title: {
-						display: true, text: 'Symmetry function result'
+						display: true, text: 'Input wave'
 					},
 					scales: {
 						xAxes: [{
-							ticks: {
-								min: 0,
-								maxTicksLimit: 20
-							},
+							ticks: {maxTicksLimit: 20},
 							scaleLabel: {
 								display: true,
 								labelString: 'seconds'
@@ -213,15 +177,93 @@ $('form[id=main-submit]').on('submit', function(e) {
 						}]
 					}
 				}
-			})
-			$('#my-modal').modal('hide')
-			if($('.alert').length)
-				$('.alert').alert('close')
-		},
-		error: function(err) {
-			error(err.responseText)
-		}
+		})
+
+		$('.modal-title').text('Analyzing frequency')
+		$('.progress-bar').attr('aria-valuenow', 100).css('width', '100%')
+
+		data.append('waves', JSON.stringify(wave_sample))
+		$.ajax({
+			url: "/submit",
+			type: "POST",
+			data: data,
+			processData: false,
+			contentType: false,
+			success: function(data, status) { 
+				// Drawing frequency
+				var sample_count = data.sample_count
+				var ctx = $('#freq-chart')
+				var dataz = createDatasets({
+					'labels': Array.apply(null, {length: sample_count.length}).map(Number.call, Number),
+					'datasets': sample_count,
+					'datalabel': 'Frequency',
+				})
+
+				if(freqchart != null)
+					freqchart.destroy()
+
+				freqchart = new Chart(ctx, {
+					type: 'line',
+					data: dataz,
+					options: {
+						title: {
+							display: true, text: 'Frequency (Hz)'
+						},
+						scales: {
+							xAxes: [{ ticks: {maxTicksLimit: 20 },
+									scaleLabel: {
+										display: true,
+										labelString: '# of peaks detected'
+									}
+							}]
+						}
+					}
+				})
+
+				// Drawing sym chart
+				var sym_val = data.sym_val
+				ctx = $('#sym-chart')
+				dataz = createDatasets({
+					'labels': xlabels,
+					'datasets': sym_val,
+					'datalabel': 'Correlation result'
+				})
+
+				if(symchart != null)
+					symchart.destroy()
+
+				symchart = new Chart(ctx, {
+					type: 'line',
+					data: dataz,
+					options: {
+						title: {
+							display: true, text: 'Symmetry function result'
+						},
+						scales: {
+							xAxes: [{
+								ticks: {
+									min: 0,
+									maxTicksLimit: 20
+								},
+								scaleLabel: {
+									display: true,
+									labelString: 'seconds'
+								}
+							}]
+						}
+					}
+				})
+				$('#my-modal').modal('hide')
+				if($('.alert').length)
+					$('.alert').alert('close')
+			},
+			error: function(err) {
+				error(err.responseText)
+			}
+		})
 	})
 })
 
+
 })
+
