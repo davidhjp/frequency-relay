@@ -52,7 +52,6 @@ app.post('/submit',  upload.single(), function(req,res){
 	var wave_samples = JSON.parse(req.body.waves)
 	var p1 = new Promise((resolve, reject) => {
 		var s = fs.createWriteStream(waveFile, {flags: 'a'})
-		var ts = 1 / freq
 		for(var i=0;i<wave_samples.length;i++){
 			var sample = wave_samples[i]
 				s.write(`${sample}\n`)
