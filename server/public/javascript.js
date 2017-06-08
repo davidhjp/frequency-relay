@@ -44,7 +44,7 @@ $('#add-wave').click(function (){
 	var data = new FormData($('form[id=main-submit]')[0])
 	var eq = data.get('equation'), duration = parseFloat(data.get('duration'))
 	if(!eq.trim() || isNaN(duration)) {
-		alert('Missing field(s) or entered incorrect format(s)')
+		alert('Missing equation/time duration or entered incorrect format(s)', ALERT_CODE.WARN)
 		return null
 	}
 	var unit = $('.id-duration-unit').text().trim()
@@ -61,23 +61,23 @@ $(document).on('click', '.remove-wave', function() {
 	$(this).parents('li').eq(0).remove()
 })
 
-function warn(msg){
-//   if(!$('.alert').length){
+var ALERT_CODE = {
+	WARN: 0,
+	ERROR: 1
+}
+
+function alert(msg, code){
+	$('.alert').alert('close')
+	if(code == ALERT_CODE.WARN)
 		$('#alert').prepend(`<div class='alert alert-warning alert-dismissible' role='alert'> \
 			<button type='button' class='close' data-dismiss='alert' aria-label='Close'>\
 			<span aria-hidden='true'>&times;</span></button>\
 			<strong>Warning!</strong> ${msg}</div>`)
-//   }
-	$('#my-modal').modal('hide')
-}
-
-function error(msg){
-//   if(!$('.alert').length){
+	else if(code == ALERT_CODE.ERROR)
 		$('#alert').prepend(`<div class='alert alert-danger alert-dismissible' role='alert'> \
 			<button type='button' class='close' data-dismiss='alert' aria-label='Close'>\
 			<span aria-hidden='true'>&times;</span></button>\
 			<strong>Error!</strong> ${msg}</div>`)
-//   }
 	$('#my-modal').modal('hide')
 }
 
@@ -120,7 +120,7 @@ $('form[id=main-submit]').on('submit', function(e) {
 	var data = new FormData(this)
 	var freq = data.get('freq').trim()
 	if(freq == '') {
-		warn('Missing sampling frequency value!!')
+		alert('Missing sampling frequency value!!', ALERT_CODE.WARN)
 		return;
 	}
 	freq = parseFloat(freq)
@@ -133,9 +133,16 @@ $('form[id=main-submit]').on('submit', function(e) {
 	$('.wave-component').each(function (i, o){
 		wc.push({duration: $(o).attr('duration'), equation: $(o).attr('equation')})
 	})
+
 	if(wc.length == 0){
-		warn('Add wave equation')
+		alert('Add wave equation', ALERT_CODE.WARN)
 		return;
+	} else if(!data.get('param-avblock').trim()){
+		alert('Specify averaging block size', ALERT_CODE.WARN)
+		return
+	} else if(!data.get('param-symblock').trim()){
+		alert('Specify symmetry block size', ALERT_CODE.WARN)
+		return
 	}
 
 	// Drawing input wave
@@ -143,7 +150,7 @@ $('form[id=main-submit]').on('submit', function(e) {
 	worker.postMessage({waves: wc, ts: ts})
 	worker.addEventListener('message', function(e) {
 		if(e.data.error){
-			error(e.data['err'])
+			alert(e.data['err'], ALERT_CODE.ERROR)
 			return
 		}
 		var wave_sample = e.data['data']
@@ -258,7 +265,7 @@ $('form[id=main-submit]').on('submit', function(e) {
 					$('.alert').alert('close')
 			},
 			error: function(err) {
-				error(err.responseText)
+				alert(err.responseText, ALERT_CODE.ERROR)
 			}
 		})
 		worker.terminate()
