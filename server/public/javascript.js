@@ -171,6 +171,7 @@ $('form[id=main-submit]').on('submit', function(e) {
 			type: 'line',
 			data: wave,
 				options: {
+					layout: {padding: {left:10}},
 					title: {
 						display: true, text: 'Input wave'
 					},
@@ -213,6 +214,7 @@ $('form[id=main-submit]').on('submit', function(e) {
 					type: 'line',
 					data: dataz,
 					options: {
+						layout: {padding: {left:10}},
 						title: {
 							display: true, text: 'Frequency (Hz)'
 						},
@@ -243,6 +245,7 @@ $('form[id=main-submit]').on('submit', function(e) {
 					type: 'line',
 					data: dataz,
 					options: {
+						layout: {padding: {left:10}},
 						title: {
 							display: true, text: 'Symmetry function result'
 						},
